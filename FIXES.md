@@ -121,11 +121,3 @@ def process_job(job_id):
     r.hset(f"job:{job_id}", "status", "completed")
 ```
 ---
-
-# 🚀 Final step
-
-```bash
-git add FIXES.md
-git commit -m "fix: correct formatting and finalize fixes documentation"
-git push
-
