@@ -1,36 +1,108 @@
-# FIXES DOCUMENTATION
+# FIXES.md - Stage 2 DevOps Microservices Application
 
-## 1. Docker WSL Issue
-- Problem: Docker failed due to outdated WSL version
-- Fix: Updated WSL using `wsl --update` and restarted Docker Desktop
+This document contains all issues identified in the application and the fixes applied to ensure proper containerization, orchestration, and production readiness.
 
 ---
 
-## 2. Redis Worker Not Processing Jobs
-- Problem: Worker appeared idle and did not process queued jobs
-- Fix: Verified Redis connection and ensured worker was running continuously before sending jobs
+## FIX 1: Missing API root endpoint
+
+- File: api/main.py
+- Line: N/A
+- Problem: API root endpoint ("/") was not defined, causing a 404 response when accessing the base URL.
+- Fix: Added a root endpoint to return a service status message.
+
+```python
+@app.get("/")
+def root():
+    return {"message": "Job API is running"}
 
 ---
 
-## 3. Python Indentation Error in Worker
-- File: worker/worker.py
-- Problem: Incorrect indentation in `if job:` block caused syntax errors
-- Fix: Corrected indentation and ensured proper execution flow
+## FIX 2: Missing health check endpoint required for Docker
+File: api/main.py
+Line: N/A
+Problem: Docker healthcheck configuration required a valid endpoint, but none existed in the API.
+Fix: Added a /health endpoint for container health validation.
+
+```@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 ---
 
-## 4. Job Queue Timing Issue
-- Problem: Worker missed jobs when job_sender ran before worker started
-- Fix: Ensured worker starts first before sending jobs
+## FIX 3: API container healthcheck failure due to missing endpoint
+File: api/Dockerfile
+Line: N/A
+Problem: API container lacked a proper HEALTHCHECK instruction, causing unreliable container status reporting.
+Fix: Added healthcheck using the /health endpoint.
+
+```HEALTHCHECK CMD curl -f http://localhost:8000/health || exit 1
 
 ---
 
-## 5. Duplicate Folder Confusion
-- Problem: Nested `hng14-stage2-devops` folders caused wrong execution path
-- Fix: Identified correct project root and used inner folder as main repository
+## FIX 4: Worker running as root user (security issue)
+File: worker/Dockerfile
+Line: N/A
+Problem: Worker container executed as root by default, violating production security best practices.
+Fix: Created a non-root user and switched execution context.
+
+```RUN useradd -m appuser
+USER appuser
 
 ---
 
-## 6. Final Working System Verification
-- Result: Confirmed Redis queue system works (LPUSH → BRPOP)
-- Worker successfully processes jobs from queue
+## FIX 5: Inconsistent environment variable usage across services
+File: docker-compose.yml, api/main.py, worker/worker.py
+Line: N/A
+Problem: Services relied on environment variables but lacked consistent configuration, causing runtime warnings and misconfiguration risks.
+Fix: Standardized all configuration using environment variables injected via docker-compose.
+
+---
+
+## FIX 6: Frontend startup dependency issue
+File: docker-compose.yml
+Line: depends_on section
+Problem: Frontend service could start before API was ready, leading to failed API calls during initialization.
+Fix: Configured frontend to depend on API health status before starting.
+
+---
+
+## FIX 7: Missing .env template for reproducibility
+File: project root
+Problem: No .env.example file was provided for environment configuration.
+Fix: Created .env.example containing all required environment variables.
+
+```API_PORT=8000
+FRONTEND_PORT=3000
+API_IMAGE=jobapp-api
+WORKER_IMAGE=jobapp-worker
+FRONTEND_IMAGE=jobapp-frontend
+IMAGE_TAG=latest
+
+REDIS_HOST=redis
+REDIS_PORT=6379
+
+QUEUE_KEY=jobs
+HEARTBEAT_KEY=heartbeat
+HEARTBEAT_TTL=30
+JOB_DURATION=5
+
+API_URL=http://localhost:8000
+
+---
+
+## FIX 8: Redis configuration not fully standardized across services
+File: api/main.py, worker/worker.py
+Line: N/A
+Problem: Redis host/port values were not consistently enforced via environment variables across services.
+Fix: Ensured all services read Redis configuration from environment variables with safe defaults.
+
+---
+
+## FIX 9: Worker job processing lifecycle inconsistencies
+File: worker/worker.py
+Line: N/A
+Problem: Job processing flow did not consistently update Redis job status through lifecycle stages.
+Fix: Standardized job status updates (queued → processing → completed) to ensure accurate tracking.
+
+---
