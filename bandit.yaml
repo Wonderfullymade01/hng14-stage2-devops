@@ -2,4 +2,6 @@ skips:
   - B101
 
 exclude_dirs:
-  - api/tests 
+  - tests
+  - __pycache__
+  - .pytest_cache 
