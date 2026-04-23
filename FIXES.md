@@ -95,12 +95,20 @@ depends_on:
 **File:** worker/worker.py
 **Line:** 10-20
 **Problem:** Worker could crash if Redis was not ready at startup.
-**Fix:** Added retry loop to wait for Redis availability.
+**Fix:** Added retry loop and ensured Redis is initialized with environment variables.
 
 ```python
+import os
+import time
+import redis
+
 while True:
     try:
-        r = redis.Redis(host=host, port=port, decode_responses=True)
+        r = redis.Redis(
+            host=os.getenv("REDIS_HOST", "redis"),
+            port=int(os.getenv("REDIS_PORT", 6379)),
+            decode_responses=True
+        )
         r.ping()
         break
     except Exception:
@@ -121,3 +129,61 @@ def process_job(job_id):
     r.hset(f"job:{job_id}", "status", "completed")
 ```
 ---
+
+## FIX 10: Worker service missing .env injection
+**File:** docker-compose.yml
+**Line:** worker service block
+**Problem:** Worker did not load environment variables from .env, causing missing configuration at runtime.
+**Fix:** Added env_file directive.
+
+```yaml
+env_file:
+  - .env
+```
+---
+
+## FIX 11: Redis connection failure due to hardcoded localhost
+**File:** worker/worker.py
+**Line:** ~5
+**Problem:** Redis was configured using localhost, which fails inside Docker containers due to isolated networking.
+**Fix:** Replaced with service-based hostname and environment variables.
+
+```python
+r = redis.Redis(
+    host=os.getenv("REDIS_HOST", "redis"),
+    port=int(os.getenv("REDIS_PORT", 6379)),
+    decode_responses=True
+)
+```
+---
+
+## FIX 12: Worker container not resilient to Redis startup delay
+**File:** worker/worker.py
+**Line:** startup logic
+**Problem:** Worker could crash if Redis was not ready when container started.
+**Fix:** Added retry loop until Redis becomes available.
+
+```python
+while True:
+    try:
+        r.ping()
+        break
+    except Exception:
+        time.sleep(2)
+```
+---
+
+## FIX 13: Containers stopping due to attached mode usage
+**File:** docker-compose.yml (runtime issue)
+**Problem:** Running docker compose up in attached mode caused all containers to stop when terminal was closed or interrupted.
+**Fix:** Switched to detached mode for stability.
+
+```bash
+docker compose up --build -d
+```
+---
+
+## FIX 14: Invalid Compose top-level configuration (version / formatting issues)
+**File:** docker-compose.yml
+**Problem:** Old or invalid Compose syntax caused warnings and confusion.
+**Fix:** Removed deprecated version field and ensured valid Compose v3+ structure.
