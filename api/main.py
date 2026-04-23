@@ -5,7 +5,6 @@ import os
 
 app = FastAPI()
 
-# Redis configuration
 host = os.getenv("REDIS_HOST", "redis")
 port = int(os.getenv("REDIS_PORT", 6379))
 
