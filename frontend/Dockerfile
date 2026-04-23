@@ -1,4 +1,4 @@
-# ---------- Build Stage ----------
+# ---------- Builder ----------
 FROM node:18-alpine AS builder
 
 WORKDIR /app
@@ -7,27 +7,23 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
-
 RUN npm run build
 
 
-# ---------- Runtime Stage ----------
+# ---------- Runtime ----------
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Install lightweight static server
-RUN npm install -g serve
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Create non-root user (SECURITY REQUIREMENT)
-RUN addgroup -S app && adduser -S app -G app
+COPY --from=builder /app /app
 
-# Copy build output only (clean + optimized)
-COPY --from=builder /app/build ./build
-
-USER app
+USER appuser
 
 EXPOSE 3000
 
-# Production serving
-CMD ["serve", "-s", "build", "-l", "3000"] 
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget --spider http://localhost:3000 || exit 1
+
+CMD ["npm", "start"] 

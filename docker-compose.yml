@@ -15,6 +15,7 @@
       retries: 5
       start_period: 3s
 
+
   api:
     build:
       context: ./api
@@ -41,11 +42,12 @@
       - "${API_PORT}:8000"
 
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+
 
   worker:
     build:
@@ -73,11 +75,12 @@
       - backend
 
     healthcheck:
-      test: ["CMD", "python", "-c", "import os; exit(0)"]
+      test: ["CMD", "python", "-c", "import redis, os; r=redis.Redis(host=os.getenv('REDIS_HOST','redis')); r.ping()"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+
 
   frontend:
     build:
@@ -110,6 +113,7 @@
       retries: 5
       start_period: 10s
 
- networks:
+
+networks:
   backend:
-    driver: bridge  
+    driver: bridge 
