@@ -127,32 +127,32 @@ jobs:
 # SECURITY SCAN
 # -------------------------
   security:
-  runs-on: ubuntu-latest
-  needs: build
+    runs-on: ubuntu-latest
+    needs: build
 
-  steps:
-    - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Build API image (required for Trivy scan)
-      run: docker build -t jobapp-api:latest ./api
+      - name: Build API image (required for Trivy scan)
+        run: docker build -t jobapp-api:latest ./api
 
-    - name: Run Trivy scan
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: image
-        image-ref: jobapp-api:latest
-        format: sarif
-        output: trivy-results.sarif
-        exit-code: 0
-        severity: CRITICAL,HIGH
+      - name: Run Trivy scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: image
+          image-ref: jobapp-api:latest
+          format: sarif
+          output: trivy-results.sarif
+          exit-code: 0
+          severity: CRITICAL,HIGH
 
-    - name: Upload SARIF
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: trivy-results.sarifs
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
 
 
 # -------------------------
