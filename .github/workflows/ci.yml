@@ -106,21 +106,21 @@ jobs:
         with:
           context: ./api
           push: false
-          tags: jobapp-api:${{ github.sha }}
+          tags: jobapp-api:latest
 
       - name: Build Worker image
         uses: docker/build-push-action@v5
         with:
           context: ./worker
           push: false
-          tags: jobapp-worker:${{ github.sha }}
+          tags: jobapp-worker:latest
 
       - name: Build Frontend image
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: false
-          tags: jobapp-frontend:${{ github.sha }}
+          tags: jobapp-frontend:latest
 
 
 # -------------------------
@@ -134,13 +134,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build API image (required for Trivy scan)
-        run: docker build -t jobapp-api:${{ github.sha }} ./api
+        run: docker build -t jobapp-api:latest ./api
 
       - name: Run Trivy scan
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: image
-          image-ref: jobapp-api:${{ github.sha }}
+          image-ref: jobapp-api:latest
           format: sarif
           output: trivy-results.sarif
           exit-code: 1
