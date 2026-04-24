@@ -9,6 +9,7 @@ r = redis.Redis(
     decode_responses=True,
 )
 
+
 def process_job(job_id):
     print(f"Processing job {job_id}", flush=True)
 
