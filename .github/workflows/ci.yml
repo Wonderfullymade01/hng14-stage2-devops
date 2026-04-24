@@ -106,33 +106,21 @@ jobs:
         with:
           context: ./api
           push: false
-          tags: |
-            jobapp-api:latest
-            jobapp-api:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: jobapp-api:${{ github.sha }}
 
       - name: Build Worker image
         uses: docker/build-push-action@v5
         with:
           context: ./worker
           push: false
-          tags: |
-            jobapp-worker:latest
-            jobapp-worker:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: jobapp-worker:${{ github.sha }}
 
       - name: Build Frontend image
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: false
-          tags: |
-            jobapp-frontend:latest
-            jobapp-frontend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: jobapp-frontend:${{ github.sha }}
 
 
 # -------------------------
@@ -145,13 +133,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Build API image (required for Trivy scan)
+        run: docker build -t jobapp-api:${{ github.sha }} ./api
+
       - name: Run Trivy scan
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: image
+          image-ref: jobapp-api:${{ github.sha }}
           format: sarif
           output: trivy-results.sarif
-          image-ref: jobapp-api:${{ github.sha }}
           exit-code: 1
           severity: CRITICAL,HIGH
 
