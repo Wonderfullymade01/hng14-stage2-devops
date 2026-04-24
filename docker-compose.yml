@@ -1,65 +1,52 @@
- version: "3.9"
-
- services:
+services:
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    ports:
+      - "6379:6379"
     networks:
       - backend
-
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
-      retries: 5
+      retries: 10
 
   api:
     build: ./api
     restart: unless-stopped
-
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
-
     depends_on:
-      redis:
-        condition: service_healthy
-
+      - redis
     ports:
       - "8000:8000"
-
     networks:
       - backend
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 
   worker:
     build: ./worker
     restart: unless-stopped
-
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
-
     depends_on:
-      redis:
-        condition: service_healthy
-
+      - redis
     networks:
       - backend
 
   frontend:
     build: ./frontend
     restart: unless-stopped
-
     depends_on:
-      api:
-        condition: service_healthy
-
+      - api
     ports:
       - "3000:3000"
-
     networks:
       - backend
 
- networks:
-  backend:  
+networks:
+  backend:

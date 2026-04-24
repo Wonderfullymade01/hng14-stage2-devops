@@ -1,0 +1,6 @@
+HTTP/1.1 307 Temporary Redirect
+date: Fri, 24 Apr 2026 10:11:52 GMT
+server: uvicorn
+content-length: 0
+location: http://localhost:8000/jobs
+

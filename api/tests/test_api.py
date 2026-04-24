@@ -1,5 +1,7 @@
-from fastapi.testclient import TestClient
 from unittest.mock import patch
+
+from fastapi.testclient import TestClient
+
 from api.main import app
 
 client = TestClient(app)
@@ -21,4 +23,4 @@ def test_redis_mock(mock_redis):
     mock_instance.ping.return_value = True
 
     response = client.get("/health")
-    assert response.status_code == 200 
+    assert response.status_code == 200

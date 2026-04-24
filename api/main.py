@@ -1,7 +1,8 @@
-from fastapi import FastAPI
-import redis
-import uuid
 import os
+import uuid
+
+import redis
+from fastapi import FastAPI
 
 app = FastAPI()
 
@@ -11,11 +12,8 @@ app = FastAPI()
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 
-r = redis.Redis(
-    host=REDIS_HOST,
-    port=REDIS_PORT,
-    decode_responses=True
-)
+r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+
 
 # ----------------------------
 # HEALTH CHECK (REQUIRED)
@@ -60,7 +58,4 @@ def get_job(job_id: str):
     if not status:
         return {"error": "not found"}
 
-    return {
-        "job_id": job_id,
-        "status": status
-    } 
+    return {"job_id": job_id, "status": status}
