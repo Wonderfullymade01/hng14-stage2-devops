@@ -1,10 +1,10 @@
+ version: "3.9"
+
  services:
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: ["redis-server", "--save", "", "--appendonly", "no"]
-
     networks:
       - backend
 
@@ -13,59 +13,32 @@
       interval: 5s
       timeout: 3s
       retries: 5
-      start_period: 3s
-
 
   api:
-    build:
-      context: ./api
-
-    image: ${API_IMAGE}:${IMAGE_TAG}
+    build: ./api
     restart: unless-stopped
 
-    mem_limit: 512m
-    cpus: 0.5
-
     environment:
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
-      QUEUE_KEY: ${QUEUE_KEY}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
 
     depends_on:
       redis:
         condition: service_healthy
-
-    networks:
-      - backend
 
     ports:
-      - "${API_PORT}:8000"
+      - "8000:8000"
 
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
+    networks:
+      - backend
 
   worker:
-    build:
-      context: ./worker
-
-    image: ${WORKER_IMAGE}:${IMAGE_TAG}
+    build: ./worker
     restart: unless-stopped
 
-    mem_limit: 512m
-    cpus: 0.5
-
     environment:
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
-      QUEUE_KEY: ${QUEUE_KEY}
-      HEARTBEAT_KEY: ${HEARTBEAT_KEY}
-      HEARTBEAT_TTL: ${HEARTBEAT_TTL}
-      JOB_DURATION: ${JOB_DURATION}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
 
     depends_on:
       redis:
@@ -74,46 +47,19 @@
     networks:
       - backend
 
-    healthcheck:
-      test: ["CMD", "python", "-c", "import redis, os; r=redis.Redis(host=os.getenv('REDIS_HOST','redis')); r.ping()"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-
   frontend:
-    build:
-      context: ./frontend
-
-    image: ${FRONTEND_IMAGE}:${IMAGE_TAG}
+    build: ./frontend
     restart: unless-stopped
-
-    mem_limit: 256m
-    cpus: 0.3
-
-    environment:
-      API_URL: ${API_URL}
-      PORT: "3000"
 
     depends_on:
       api:
         condition: service_healthy
 
+    ports:
+      - "3000:3000"
+
     networks:
       - backend
 
-    ports:
-      - "${FRONTEND_PORT}:3000"
-
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-
-networks:
-  backend:
-    driver: bridge 
+ networks:
+  backend:  

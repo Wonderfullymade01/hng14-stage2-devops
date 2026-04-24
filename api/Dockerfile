@@ -12,7 +12,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN useradd -m appuser
+RUN adduser --disabled-password --gecos "" appuser
 
 ENV PATH=/home/appuser/.local/bin:$PATH
 
